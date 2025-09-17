@@ -98,6 +98,11 @@
     <Reference Include="ICSharpCode.SharpZipLib, Version=1.3.3.11, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpZipLib.1.3.3\lib\net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
+    <Reference Include="Interop.BarTender, Version=11.2.9.1, Culture=neutral, PublicKeyToken=109ff779a1b4cbc7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>bin\x64\Debug\Interop.BarTender.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -116,7 +121,7 @@
     <Reference Include="RestSharp, Version=106.11.7.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
       <HintPath>..\packages\RestSharp.106.11.7\lib\net452\RestSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Seagull.BarTender.Print, Version=11.1.10.1, Culture=neutral, PublicKeyToken=109ff779a1b4cbc7, processorArchitecture=x86">
+    <Reference Include="Seagull.BarTender.Print, Version=11.2.9.1, Culture=neutral, PublicKeyToken=109ff779a1b4cbc7, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\x64\Debug\Seagull.BarTender.Print.dll</HintPath>
     </Reference>
@@ -127,6 +132,10 @@
     <Reference Include="Seagull.Interop, Version=11.1.10.1, Culture=neutral, PublicKeyToken=109ff779a1b4cbc7, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\x64\Debug\Seagull.Interop.dll</HintPath>
+    </Reference>
+    <Reference Include="Seagull.License, Version=11.2.9.1, Culture=neutral, PublicKeyToken=109ff779a1b4cbc7, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\x64\Debug\Seagull.License.dll</HintPath>
     </Reference>
     <Reference Include="Seagull.Services.PrintScheduler, Version=11.1.10.1, Culture=neutral, PublicKeyToken=109ff779a1b4cbc7, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
@@ -187,10 +196,14 @@
   <ItemGroup>
     <Compile Include="AccPrint.cs" />
     <Compile Include="Auto_Route.cs" />
+    <Compile Include="AvSFIS.cs" />
     <Compile Include="BoardPrint4.cs" />
     <Compile Include="BoardPrint3.cs" />
     <Compile Include="AdvantechPrint.cs" />
+    <Compile Include="EversunWoNo.cs" />
     <Compile Include="PhilEPC_Print.cs" />
+    <Compile Include="SetupIniIP.cs" />
+    <Compile Include="SFIS.cs" />
     <Compile Include="SystemPrint2.cs" />
     <Compile Include="db_engsr.cs" />
     <Compile Include="db_eversun.cs" />

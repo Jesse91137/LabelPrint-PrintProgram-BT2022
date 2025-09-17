@@ -23,8 +23,8 @@ namespace PrintProgram
             //string cnstr = "server=ACLFWLOG;database=TWM8;uid=TWM8Sa;pwd=twm8$@523;Connect Timeout = 10";
             //string cnstr = "server=ACLFWLOG;database=TWM9;uid=TWM9App;pwd=twm9@p93;Connect Timeout = 10";
             //string cnstr = "server=ACLFWLOG;database=TWM8;uid=TWM8Sa;pwd=twm8$@523;Connect Timeout = 10";
-            string cnstr = "server=192.168.5.25;database=iFactory;uid=sa;pwd=A12kec00;Connect Timeout = 10";
-            //string cnstr = "server=192.168.6.57;database=iFactory;uid=sa;pwd=A12345678;Connect Timeout = 10";
+            //string cnstr = "server=192.168.5.25;database=iFactory;uid=sa;pwd=A12kec00;Connect Timeout = 10";
+            string cnstr = "server=192.168.6.57;database=iFactory;uid=sa;pwd=A12345678;Connect Timeout = 10";
 
             //string cnstr = "server=gpmdb.evalue-tech.com;database=iFactory;uid=automate;pwd=!QAZ2wsx;Connect Timeout = 10";
 

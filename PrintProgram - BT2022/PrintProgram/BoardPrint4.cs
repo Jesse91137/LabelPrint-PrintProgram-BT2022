@@ -1,57 +1,77 @@
-﻿using System;
+﻿using Seagull.BarTender.Print;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Data.SqlClient;
-using System.Data;
-using Microsoft.SqlServer.Server;
-using System.Collections;
-using RestSharp; // for REST API
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Text;
-using Seagull.BarTender.Print;
+using Telerik.WinControls.UI;
 
 namespace PrintProgram
 {
+    /// <summary>
+    /// 提供標籤列印相關功能的靜態類別。
+    /// </summary>
     static class BoardPrint4
     {
         /// <summary>
-        /// 應用程式的主要進入點。
+        /// 列印標籤。
         /// </summary>
+        /// <param name="LabelPath">標籤檔案的完整路徑。</param>
+        /// <param name="SNList">序號(SN)清單，依序對應標籤欄位。</param>
+        /// <param name="NOList">編號(NO)清單，依序對應標籤欄位。</param>
+        /// <param name="List_Msg">用於顯示列印訊息的 RadListControl 控制項。</param>
+        /// <returns>列印成功回傳 true，失敗回傳 false。</returns>
+        /// <remarks>
+        /// 此方法會根據 SNList 與 NOList 的內容，設定標籤檔案中的對應欄位，並執行列印。
+        /// 若發生例外，則回傳 false。
+        /// </remarks>
         [STAThread]
-    
-        public static bool PrintLabel(string LabelPath, List<string> SNList, List<int> NOList)
+        public static bool PrintLabel(string LabelPath, List<string> SNList, List<int> NOList, RadListControl List_Msg)
         {
             try
             {
+                // BarTender 列印引擎物件
                 Engine engine = null;
+                // 標籤格式文件物件
                 LabelFormatDocument btFormat = null;
+                // 啟動 BarTender 列印引擎
                 engine = new Engine();
                 engine.Start();
+
+                // 開啟指定路徑的標籤格式文件
+                // 標籤檔案（通常是 .btw 格式）
                 btFormat = engine.Documents.Open(LabelPath);
 
+                // 依序設定標籤欄位的值
                 for (int i = 0; i < SNList.Count; i++)
                 {
-                    //NO
+                    // 設定編號欄位 (NO)
                     string NO_Name = "No" + (i + 1).ToString();
-                    btFormat.SubStrings[NO_Name].Value = NOList[i].ToString().ToUpper(); //標籤檔中所設定的欄位名稱 。
-                    //SN
+                    btFormat.SubStrings[NO_Name].Value = NOList[i].ToString().ToUpper(); // 標籤檔中所設定的欄位名稱
+
+                    // 設定序號欄位 (SN)
                     string SN_Name = "SN" + (i + 1).ToString();
-                    btFormat.SubStrings[SN_Name].Value = SNList[i].ToString().ToUpper(); //標籤檔中所設定的欄位名稱 。
+                    btFormat.SubStrings[SN_Name].Value = SNList[i].ToString().ToUpper(); // 標籤檔中所設定的欄位名稱
                 }
-                btFormat.PrintSetup.IdenticalCopiesOfLabel = int.Parse("1"); //列印標籤數
-                btFormat.Print();
-                engine.Stop();
 
+                btFormat.PrintSetup.IdenticalCopiesOfLabel = int.Parse("1"); // 列印標籤數量
 
-                return true;
+                // 取得目前設定的印表機名稱，並顯示在 List_Msg 控制項
+                string printerName = btFormat.PrintSetup.PrinterName;
+                List_Msg.Items.Add($"使用的印表機：{printerName}");
+
+                /*在 BarTender Designer 軟體中，開啟你的 .btw 標籤檔案。
+                 * 點選「檔案」→「列印」→「選擇印表機」。
+                 */
+                // 在 BarTender Designer 軟體中，開啟你的 .btw 標籤檔案。
+                btFormat.Print(); // 執行列印
+                engine.Stop(); // 停止 BarTender 引擎
+
+                return true; // 列印成功
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                return false;
+                MessageBox.Show(ex.Message); // 顯示錯誤訊息
+                return false; // 列印失敗
             }
-        }        
+        }
     }
 }

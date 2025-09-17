@@ -352,7 +352,7 @@
             this.Print_Page.Size = new System.Drawing.Size(823, 607);
             this.Print_Page.TabIndex = 3;
             this.Print_Page.ThemeName = "Fluent";
-            this.Print_Page.SelectedPageChanged += new System.EventHandler(this.Print_Page_SelectedPageChanged);
+            
             ((Telerik.WinControls.UI.RadPageViewStripElement)(this.Print_Page.GetChildAt(0))).StripButtons = Telerik.WinControls.UI.StripViewButtons.None;
             ((Telerik.WinControls.UI.RadPageViewStripElement)(this.Print_Page.GetChildAt(0))).ItemDragMode = Telerik.WinControls.UI.PageViewItemDragMode.None;
             ((Telerik.WinControls.UI.RadPageViewStripElement)(this.Print_Page.GetChildAt(0))).ItemSizeMode = ((Telerik.WinControls.UI.PageViewItemSizeMode)((Telerik.WinControls.UI.PageViewItemSizeMode.EqualWidth | Telerik.WinControls.UI.PageViewItemSizeMode.EqualHeight)));
@@ -1526,7 +1526,7 @@
             this.rdb_Small.Text = "小張Descr";
             this.rdb_Small.ThemeName = "Desert";
             this.rdb_Small.CheckStateChanged += new System.EventHandler(this.rdb_Big_CheckStateChanged);
-            this.rdb_Small.MouseClick += new System.Windows.Forms.MouseEventHandler(this.rdb_Small_MouseClick);
+           
             // 
             // rdb_Big
             // 
