@@ -1338,8 +1338,9 @@ namespace PrintProgram
         #endregion
 
         #region Click 事件
+        #region OEM外箱Label列印上傳頁籤-「搜尋檔案」
         /// <summary>
-        /// 處理「搜尋檔案」按鈕點擊事件。
+        /// OEM外箱Label列印上傳頁籤-處理「搜尋檔案」按鈕點擊事件。
         /// 開啟檔案選擇對話框，選擇 BarTender 標籤檔案（*.btw），
         /// 並產生標籤預覽圖片顯示於 UP_PictureBox。
         /// </summary>
@@ -1426,7 +1427,9 @@ namespace PrintProgram
                 }
             }
         }
+        #endregion
 
+        #region OEM外箱Label設定頁籤-「搜尋」
         /// <summary>
         /// 處理「OEM 套版搜尋」按鈕的 Click 事件，根據使用者輸入的工單號 (txt_Oem_Wo)
         /// 從資料表 Print_Carton_Table 查詢對應的列印套版設定，並將結果更新到 UI 控制項，
@@ -1544,9 +1547,11 @@ namespace PrintProgram
                 // e.g. Logger.Error(ex); List_Oem_Msg.Items.Add("查詢發生錯誤，請聯絡系統管理員");
             }
         }
+        #endregion
 
+        #region OEM外箱Label設定-列印
         /// <summary>
-        /// 處理 OEM/ODM 列印按鈕事件。
+        /// OEM外箱Label列印上傳頁籤-處理 OEM/ODM 列印按鈕事件。
         /// 此方法會根據 txt_Oem_Bios 控制項是否啟用，分為兩種主要列印流程：
         /// 1. OEM-STD_Bios 模式 (txt_Oem_Bios.Enabled == true)
         ///    - 若數量大於 26，先取前 26 筆序號由 OemPrint2 列印，再將剩餘序號交由 BoardPrint2 列印。
@@ -1742,6 +1747,7 @@ namespace PrintProgram
                 btn_Oem_Print.Enabled = true;
             }
         }
+        #endregion
 
         // 計畫 (Pseudocode) - 詳細步驟說明：
         // 1. 當使用者點擊 re-print 的 checkbox (rcb_Re_Print) 時，觸發 Click 事件。
@@ -2014,18 +2020,21 @@ namespace PrintProgram
                     string eversun_wono = ds.Tables[0].Rows[0][0].ToString();
                     string WipInfo = Auto_Route.WipbarcodeOther(eversun_wono.Trim());
 
+                    // 修正序號區間判斷 bug，確保 startNO/endNO 皆為 long 時才用 long 比較，否則用 string 比較
                     EversunWoNo descJsonStu = JsonConvert.DeserializeObject<EversunWoNo>(WipInfo.ToString());//反序列化
 
                     string inputString = txt_Oem_Sn.Text.Trim();
                     bool isInRange = false;
-                    if (long.TryParse(inputString, out long inputNumber))
+                    if (long.TryParse(inputString, out long inputNumber) &&
+                        long.TryParse(descJsonStu.startNO, out long startNumber) &&
+                        long.TryParse(descJsonStu.endNO, out long endNumber))
                     {
-                        // 判斷 long 型別輸入是否在範圍內
-                        isInRange = IsInRange(inputNumber, descJsonStu.startNO, descJsonStu.endNO);
+                        // 三者皆為 long 型別才用 long 比較
+                        isInRange = IsInRange(inputNumber, startNumber, endNumber);
                     }
                     else
                     {
-                        // 判斷 string 型別輸入是否在範圍內
+                        // 只要有一者不是 long 型別就用 string 比較
                         isInRange = IsInRange(inputString, descJsonStu.startNO, descJsonStu.endNO);
                     }
 
@@ -2789,6 +2798,53 @@ namespace PrintProgram
             }
         }
 
+        /* 因王櫻蓉反應會有人為操作失敗造成值錯誤要求防呆 20251121 By Jesse 新增 針對[IGT] MAC 格式驗證
+         * 邏輯：用套件的檔名內包含 564R 驗證 MAC 格式是否正確--00045F 開頭且 12 碼英數字
+         */
+        #region [IGT] MAC 格式驗證防呆
+        /// <summary>
+        /// 處理 OEM/ODM MAC 輸入欄位的 Leave 事件。
+        /// 1. 查詢最新一筆 564R 標籤設定。
+        /// 2. 驗證 MAC 格式（00045F 開頭且 12 碼英數字）。
+        /// </summary>
+        /// <param name="sender">事件來源物件，通常為 <c>txt_Oem_Mac</c> 控制項。</param>
+        /// <param name="e">事件參數，包含離開事件資訊。</param>
+        private void txt_Oem_Mac_Leave(object sender, EventArgs e)
+        {
+            // 僅當欄位啟用且有輸入時才檢查
+            if (!txt_Oem_Mac.Enabled) return;
+            string mac = txt_Oem_Mac.Text.Trim();
+            if (string.IsNullOrEmpty(mac)) return;
+
+            string wo = txt_Oem_Wo.Text.Trim();
+            string sql = @"SELECT TOP 1 Filename FROM [Print_Carton_Table] WHERE Mac_Set=@MacSet AND Filename LIKE @FileName AND Wo=@Wo ORDER BY time DESC";
+            try
+            {
+                var parameters = new List<System.Data.SqlClient.SqlParameter>
+            {
+                new System.Data.SqlClient.SqlParameter("@MacSet", "Yes"),
+                new System.Data.SqlClient.SqlParameter("@FileName", "%564R%"),
+                new System.Data.SqlClient.SqlParameter("@Wo", wo)
+            };
+                System.Data.DataSet ds = db.reDs(sql, parameters.ToArray());
+                if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0) return;
+
+                // 有資料才驗證 MAC 格式
+                if (!System.Text.RegularExpressions.Regex.IsMatch(mac, "^00045F[0-9A-Fa-f]{6}$") || mac.Length != 12)
+                {
+                    MessageBox.Show("MAC 格式錯誤，必須以 00045F 開頭且為 12 碼英數字！", "格式錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txt_Oem_Mac.Focus();
+                    txt_Oem_Mac.SelectAll();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("MAC 格式檢查錯誤：" + ex.Message, "錯誤");
+            }
+        }
+        #endregion
+
         /// <summary>
         /// 處理 OEM/ODM 重列印序號輸入欄位的 KeyPress 事件。
         /// 當使用者在 <c>txt_reprint_Oem_Sn</c> 輸入序號並按下 Enter 鍵時，
@@ -2919,10 +2975,6 @@ namespace PrintProgram
             }
         }
 
-
-
-
-
         /// <summary>
         /// 查詢指定工單號 (MOID) 是否存在於 Print_AvSFIS_Table 資料表。
         /// 若查詢到資料則回傳 true，否則回傳 false。
@@ -2937,12 +2989,6 @@ namespace PrintProgram
             dataSet = db.reDs(sql);
             return (dataSet.Tables[0].Rows.Count == 0) ? false : true;
         }
-
-
-
-
-
-
 
         /// <summary>
         /// FTP_Dl_Btw_thread_DoWork 方法負責從 FTP 伺服器下載指定的套版檔案。
@@ -3086,45 +3132,66 @@ namespace PrintProgram
                     // 取得 Print 伺服器 FTP 連線資訊
                     Getftp("Print");
 
-                    // 建立 FTP 上傳請求
-                    // 這段程式碼用於建立 FTP 上傳檔案的請求，並設定相關參數
-                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + ftpServer + "/" + UPfilename); // 建立 FTP 請求物件，指定上傳路徑與檔名
-                    request.KeepAlive = true; // 設定連線保持存活，避免中途斷線
-                    request.UseBinary = true; // 設定傳輸模式為二進位，確保檔案正確上傳
-                    request.Credentials = new NetworkCredential(ftpuser, ftppassword); // 設定 FTP 帳號與密碼
-                    request.Method = WebRequestMethods.Ftp.UploadFile; // 設定 FTP 方法為上傳檔案
-                    request.ContentLength = finfo.Length; // 設定上傳檔案的大小（位元組數）
+                    // 檢查是否有正確取得 ftpServer
+                    if (string.IsNullOrWhiteSpace(ftpServer))
+                    {
+                        throw new Exception("FTP server not configured (ftpServer is empty). 請確認 i_Program_FtpServer_Table 資料。");
+                    }
 
-                    // 取得 FTP 回應物件
-                    FtpWebResponse response = request.GetResponse() as FtpWebResponse;
+                    // 建立 FTP 上傳請求
+                    string ftpBase = ftpServer.StartsWith("ftp://", StringComparison.OrdinalIgnoreCase) ? ftpServer : "ftp://" + ftpServer;
+                    List2_Msg.Items.Add($"FTP upload -> Server: {ftpServer} User: {ftpuser}");
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpBase + "/" + UPfilename);
+                    // 若環境有系統 Proxy 可能會導致連線失敗，先關閉 Proxy
+                    request.Proxy = null;
+                    request.KeepAlive = false; // 上傳完成後關閉連線
+                    request.UseBinary = true;
+                    request.UsePassive = true; // 可改為 false 視網路環境與伺服器需求
+                    request.Timeout = 30000; // 30s
+                    request.ReadWriteTimeout = 30000;
+                    request.Credentials = new NetworkCredential(ftpuser, ftppassword);
+                    request.Method = WebRequestMethods.Ftp.UploadFile;
+
+                    // 先將檔案寫入 RequestStream，完成後再取得回應 (正確的上傳順序)
                     int buffLength = 2048;
                     byte[] buffer = new byte[buffLength];
                     int contentLen;
-                    FileStream fs = File.OpenRead(txt_Btw_Path.Text);
-                    Stream ftpstream = request.GetRequestStream();
-                    contentLen = fs.Read(buffer, 0, buffer.Length);
-                    int allbye = (int)finfo.Length;
-                    Form.CheckForIllegalCrossThreadCalls = false;
-
-                    int startbye = 0;
-                    // 分段寫入檔案至 FTP
-                    while (contentLen != 0)
+                    using (FileStream fs = File.OpenRead(txt_Btw_Path.Text))
+                    using (Stream ftpstream = request.GetRequestStream())
                     {
-                        startbye = contentLen + startbye;
-                        ftpstream.Write(buffer, 0, contentLen);
-                        // 若有進度條可在此更新進度
-                        contentLen = fs.Read(buffer, 0, buffLength);
+                        contentLen = fs.Read(buffer, 0, buffer.Length);
+                        while (contentLen > 0)
+                        {
+                            ftpstream.Write(buffer, 0, contentLen);
+                            contentLen = fs.Read(buffer, 0, buffLength);
+                        }
                     }
-                    fs.Close();
-                    ftpstream.Close();
-                    response.Close();
 
-                    TempUploadResult = true;
+                    // 取得 FTP 回應物件，並以狀態確認是否成功
+                    using (FtpWebResponse response = request.GetResponse() as FtpWebResponse)
+                    {
+                        if (response != null)
+                        {
+                            // 可記錄 response.StatusDescription 或 StatusCode
+                            TempUploadResult = true;
+                        }
+                        else
+                        {
+                            TempUploadResult = false;
+                        }
+                    }
                 }
                 catch (Exception ftp)
                 {
                     TempUploadResult = false;
-                    MessageBox.Show(ftp.Message);
+                    // 嘗試額外回報 WebException 的 Status 與 InnerException
+                    string extra = string.Empty;
+                    if (ftp is WebException wex)
+                    {
+                        extra = $"Status={wex.Status}; Response={wex.Response?.ToString()}; Inner={wex.InnerException?.Message}";
+                    }
+                    List2_Msg.Items.Add($"FTP upload failed: {ftp.Message} {extra}");
+                    MessageBox.Show($"FTP upload failed: {ftp.Message}\nServer: {ftpServer}\nUser: {ftpuser}\n{extra}");
                 }
                 #region 套版同步上傳
                 try
@@ -3132,43 +3199,60 @@ namespace PrintProgram
                     // 取得 PrintBarTender 備份伺服器 FTP 連線資訊
                     Getftp("PrintBarTender");
 
+                    if (string.IsNullOrWhiteSpace(ftpServer))
+                    {
+                        throw new Exception("FTP backup server not configured (ftpServer is empty). 請確認 i_Program_FtpServer_Table 資料。");
+                    }
+
                     ftpPutFile = "Eversun";
-                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + ftpServer + "/" + ftpPutFile + "/" + UPfilename);
-                    request.KeepAlive = true;
+                    string ftpBase = ftpServer.StartsWith("ftp://", StringComparison.OrdinalIgnoreCase) ? ftpServer : "ftp://" + ftpServer;
+                    List2_Msg.Items.Add($"FTP backup upload -> Server: {ftpServer} User: {ftpuser}");
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpBase + "/" + ftpPutFile + "/" + UPfilename);
+                    request.Proxy = null;
+                    request.KeepAlive = false;
                     request.UseBinary = true;
+                    request.UsePassive = true;
+                    request.Timeout = 30000;
+                    request.ReadWriteTimeout = 30000;
                     request.Credentials = new NetworkCredential(ftpuser, ftppassword);
                     request.Method = WebRequestMethods.Ftp.UploadFile;
-                    request.ContentLength = finfo.Length; // 設定上傳檔案大小
 
-                    FtpWebResponse response = request.GetResponse() as FtpWebResponse;
                     int buffLength = 2048;
                     byte[] buffer = new byte[buffLength];
                     int contentLen;
-                    FileStream fs = File.OpenRead(txt_Btw_Path.Text);
-                    Stream ftpstream = request.GetRequestStream();
-                    contentLen = fs.Read(buffer, 0, buffer.Length);
-                    int allbye = (int)finfo.Length;
-                    Form.CheckForIllegalCrossThreadCalls = false;
-
-                    int startbye = 0;
-                    // 分段寫入檔案至 FTP 備份
-                    while (contentLen != 0)
+                    using (FileStream fs = File.OpenRead(txt_Btw_Path.Text))
+                    using (Stream ftpstream = request.GetRequestStream())
                     {
-                        startbye = contentLen + startbye;
-                        ftpstream.Write(buffer, 0, contentLen);
-                        // 若有進度條可在此更新進度
-                        contentLen = fs.Read(buffer, 0, buffLength);
+                        contentLen = fs.Read(buffer, 0, buffer.Length);
+                        while (contentLen > 0)
+                        {
+                            ftpstream.Write(buffer, 0, contentLen);
+                            contentLen = fs.Read(buffer, 0, buffLength);
+                        }
                     }
-                    fs.Close();
-                    ftpstream.Close();
-                    response.Close();
 
-                    TempUploadResult = true;
+                    using (FtpWebResponse response = request.GetResponse() as FtpWebResponse)
+                    {
+                        if (response != null)
+                        {
+                            TempUploadResult = true;
+                        }
+                        else
+                        {
+                            TempUploadResult = false;
+                        }
+                    }
                 }
                 catch (Exception ftp)
                 {
                     TempUploadResult = false;
-                    MessageBox.Show(ftp.Message);
+                    string extra = string.Empty;
+                    if (ftp is WebException wex)
+                    {
+                        extra = $"Status={wex.Status}; Response={wex.Response?.ToString()}; Inner={wex.InnerException?.Message}";
+                    }
+                    List2_Msg.Items.Add($"FTP backup upload failed: {ftp.Message} {extra}");
+                    MessageBox.Show($"FTP backup upload failed: {ftp.Message}\nServer: {ftpServer}\nUser: {ftpuser}\n{extra}");
                 }
                 #endregion
             }
@@ -3254,6 +3338,7 @@ namespace PrintProgram
                             + "'" + Bios_Set + "')";
                 if (db.Exsql(InsSql) == true)
                 {
+                    /*列印種類*/
                     string Print_Type = "Oem_On_Line";
                     InsSql = " INSERT INTO [Print_Wo_Setting_Table] (" +
                         "Record_Time,Work_Order,Print_Type) VALUES("
