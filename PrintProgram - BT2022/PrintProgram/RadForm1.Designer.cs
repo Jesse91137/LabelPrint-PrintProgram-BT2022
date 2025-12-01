@@ -985,6 +985,7 @@
             this.txt_Oem_Mac.TabIndex = 8;
             this.txt_Oem_Mac.ThemeName = "Desert";
             this.txt_Oem_Mac.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txt_Oem_Mac_KeyPress);
+            this.txt_Oem_Mac.Leave += new System.EventHandler(this.txt_Oem_Mac_Leave);
             // 
             // radLabel19
             // 
