@@ -16,15 +16,17 @@ namespace PrintProgram
         /// 應用程式的主要進入點。
         /// </summary>
         [STAThread]
-     
+
         public static SqlConnection GetCon()
         {
 
             //string cnstr = "server=ACLFWLOG;database=TWM8;uid=TWM8Sa;pwd=twm8$@523;Connect Timeout = 10";
             //string cnstr = "server=ACLFWLOG;database=TWM9;uid=TWM9App;pwd=twm9@p93;Connect Timeout = 10";
             //string cnstr = "server=ACLFWLOG;database=TWM8;uid=TWM8Sa;pwd=twm8$@523;Connect Timeout = 10";
-            //string cnstr = "server=192.168.5.25;database=iFactory;uid=sa;pwd=A12kec00;Connect Timeout = 10";
-            string cnstr = "server=192.168.6.57;database=iFactory;uid=sa;pwd=A12345678;Connect Timeout = 10";
+            /* 測試 *****************/
+            string cnstr = "server=192.168.5.25;database=iFactory;uid=sa;pwd=A12kec00;Connect Timeout = 10";
+            /* 正式 *****************/
+            //string cnstr = "server=192.168.6.57;database=iFactory;uid=sa;pwd=A12345678;Connect Timeout = 10";
 
             //string cnstr = "server=gpmdb.evalue-tech.com;database=iFactory;uid=automate;pwd=!QAZ2wsx;Connect Timeout = 10";
 
@@ -59,14 +61,14 @@ namespace PrintProgram
         }
         public static DataSet reDs(string cmdtxt)
         {
-            
-                SqlConnection con = db.GetCon();
-                SqlDataAdapter da = new SqlDataAdapter(cmdtxt, con);
-                //建立資料集ds
-                DataSet ds = new DataSet();
-                da.Fill(ds);
-                return ds;
-            
+
+            SqlConnection con = db.GetCon();
+            SqlDataAdapter da = new SqlDataAdapter(cmdtxt, con);
+            //建立資料集ds
+            DataSet ds = new DataSet();
+            da.Fill(ds);
+            return ds;
+
         }
 
         public static string scalDs(string str_select)
@@ -91,5 +93,31 @@ namespace PrintProgram
             }
             return str_select;
         }
+
+        #region
+        /// <summary>
+        /// 執行帶參數的 SQL 查詢，回傳 DataSet。
+        /// </summary>
+        /// <param name="cmdtxt">SQL 查詢語句</param>
+        /// <param name="parameters">SQL 參數陣列</param>
+        /// <returns>查詢結果 DataSet</returns>
+        public static DataSet reDs(string cmdtxt, SqlParameter[] parameters)
+        {
+            using (SqlConnection con = db.GetCon())
+            using (SqlCommand cmd = new SqlCommand(cmdtxt, con))
+            {
+                if (parameters != null)
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+                using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                {
+                    DataSet ds = new DataSet();
+                    da.Fill(ds);
+                    return ds;
+                }
+            }
+        }
+        #endregion
     }
 }
